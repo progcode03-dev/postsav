@@ -1,5 +1,7 @@
 """Social media downloader. Run python app.py locally; Gunicorn serves wsgi:application in production."""
 import ipaddress
+import base64
+import hashlib
 import json
 import os
 import re
@@ -19,7 +21,7 @@ from flask import Flask, Response, abort, jsonify, render_template, request, str
 from werkzeug.middleware.proxy_fix import ProxyFix
 import requests
 import yt_dlp
-from media_sources import PINTEREST_HOST, download_to_path, linkedin_post, instagram_post, pinterest_pin_url, pinterest_post
+from media_sources import PINTEREST_HOST, allowed_url, download_to_path, linkedin_post, instagram_post, pinterest_pin_url, pinterest_post
 from limits import DownloadGate, RateLimiter
 import seo
 import site_content
@@ -405,7 +407,8 @@ def guard_requests():
 
 
 # Home, platform pages, sitemap, robots.txt, llms.txt and the 404 page are registered by seo.py.
-seo.init_app(app, lambda: PUBLIC_MODE)
+seo.init_app(app, lambda: PUBLIC_MODE, lambda: dict(
+    operator=OPERATOR_NAME, email=CONTACT_EMAIL, ttl=SESSION_TTL // 60, stale=STALE_DOWNLOAD_AGE // 60))
 
 LEGAL_PAGES = {path.lstrip('/'): meta['name'] for path, meta in site_content.LEGAL.items()}
 
@@ -471,7 +474,9 @@ def info():
         token = remember(post)
         public = {k: v for k, v in post.items() if k != 'assets'}
         public['session'] = token
-        public['assets'] = [dict(id=str(i), kind=a['kind'], thumbnail=a.get('thumbnail'), label=a.get('label') or a['kind'].title()) for i, a in enumerate(post['assets'])]
+        public['assets'] = [dict(id=str(i), kind=a['kind'],
+                                thumbnail=a.get('thumbnail') if allowed_url(a.get('thumbnail'), post['platform']) else None,
+                                label=a.get('label') or a['kind'].title()) for i, a in enumerate(post['assets'])]
         return jsonify(public)
     except Exception as err:
         app.logger.warning('Extraction failed for %s: %s', urlsplit(url).hostname, type(err).__name__)
@@ -529,6 +534,24 @@ def download():
 @app.after_request
 def response_headers(response):
     response.headers['X-Content-Type-Options'] = 'nosniff'
+    response.headers['X-Frame-Options'] = 'DENY'
+    response.headers['Permissions-Policy'] = 'camera=(), microphone=(), geolocation=()'
+    script_sources = "'self' https://www.googletagmanager.com"
+    advertising = PUBLIC_MODE and seo.google_services()['ads_enabled']
+    if advertising:
+        script_sources += ' https:'
+    if response.mimetype == 'text/html':
+        for block in re.findall(r'<script[^>]*>(.*?)</script>', response.get_data(as_text=True), re.S):
+            if block.strip():
+                digest = base64.b64encode(hashlib.sha256(block.encode('utf-8')).digest()).decode('ascii')
+                script_sources += f" 'sha256-{digest}'"
+    response.headers['Content-Security-Policy'] = (
+        "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; "
+        "form-action 'self'; script-src " + script_sources + "; style-src 'self' 'unsafe-inline'; "
+        "img-src 'self' data: https:; font-src 'self'; connect-src 'self' https://*.google-analytics.com "
+        "https://*.analytics.google.com https://www.googletagmanager.com" +
+        (" https:; frame-src https:;" if advertising else "; frame-src 'none';")
+    )
     if request.path.startswith('/api/') or request.path in ('/healthz', '/readyz'):
         # Operational endpoints are never content: keep them out of search results and caches.
         response.headers['Cache-Control'] = 'no-store'

@@ -12,7 +12,7 @@
  }
  async function download(asset,button){
   if(!current || downloading)return;
-  downloading=true;document.querySelectorAll('button').forEach(b=>b.disabled=true);setMsg(asset==='all'?'Preparing your ZIP…':'Downloading attachment…');
+  downloading=true;document.querySelectorAll('#f button, #result button').forEach(b=>b.disabled=true);setMsg(asset==='all'?'Preparing your ZIP…':'Downloading attachment…');
   try{
    const res=await fetch('/api/download?'+new URLSearchParams({session:current.session,asset}));
    if(!res.ok){const data=await readJSON(res);throw new Error(data.error||'Download failed.')}
@@ -22,7 +22,7 @@
    link.download=encoded?decodeURIComponent(encoded[1]):plain?plain[1]:'download';
    link.href=objectURL;document.body.append(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(objectURL),60000);
    setMsg('Download ready. Check your browser downloads.');
-  }catch(err){setMsg(err.message,true)}finally{document.querySelectorAll('button').forEach(b=>b.disabled=false);downloading=false}
+  }catch(err){setMsg(err.message,true)}finally{document.querySelectorAll('#f button, #result button').forEach(b=>b.disabled=false);downloading=false}
  }
  $('url').addEventListener('paste',()=>setTimeout(()=>{if(PUBLIC_MODE&&!$('ack').checked){setMsg('Tick the confirmation box, then press Fetch media.',true);return}$('f').requestSubmit()},0));
  $('f').addEventListener('submit',async e=>{

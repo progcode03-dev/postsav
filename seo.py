@@ -76,13 +76,27 @@ def display_date(iso):
 # ---------------------------------------------------------------------------------------------------- urls
 def base_url():
     """Public origin used in canonical tags, sitemap and structured data."""
-    explicit = os.environ.get('SITE_URL', '').strip().rstrip('/')
-    if explicit.startswith(('https://', 'http://')):
+    explicit = configured_origin(os.environ.get('SITE_URL', ''))
+    if explicit:
         return explicit
-    external = os.environ.get('RENDER_EXTERNAL_URL', '').strip().rstrip('/')
-    if external.startswith('https://'):
+    external = configured_origin(os.environ.get('RENDER_EXTERNAL_URL', ''))
+    if external and external.startswith('https://'):
         return external
     return origin_from_request()
+
+
+def configured_origin(value):
+    """Canonical configuration must contain only a valid HTTP(S) origin."""
+    try:
+        parts = urlsplit(value.strip())
+        if (parts.scheme not in ('http', 'https') or not parts.hostname or parts.username or parts.password
+                or parts.path not in ('', '/') or parts.query or parts.fragment
+                or parts.port is not None and not 1 <= parts.port <= 65535
+                or not re.fullmatch(r'[A-Za-z0-9.-]+(?::[0-9]{1,5})?', parts.netloc)):
+            return None
+        return f'{parts.scheme}://{parts.netloc.lower()}'
+    except ValueError:
+        return None
 
 
 _LOCAL_HOSTS = ('localhost', '127.0.0.1', '[::1]')
@@ -147,7 +161,7 @@ def jsonld(page, base):
     org, site, app = f'{base}/#organization', f'{base}/#website', f'{base}/#app'
     home = sc.PAGES['/']
     organization = {'@type': 'Organization', '@id': org, 'name': sc.BRAND, 'url': base + '/', 'sameAs': [sc.GITHUB_URL],
-                    'logo': {'@type': 'ImageObject', '@id': f'{base}/#logo', 'url': base + LOGO_PATH, 'width': 512, 'height': 512}}
+                    'logo': {'@type': 'ImageObject', '@id': f'{base}/#logo', 'url': base + asset('icons/icon-512.png'), 'width': 512, 'height': 512}}
     if contact_email():
         organization['email'] = contact_email()
     nodes = [
@@ -156,12 +170,12 @@ def jsonld(page, base):
         {'@type': 'WebApplication', '@id': app, 'name': sc.BRAND, 'url': base + '/', 'description': md_plain(home['lead']),
          'applicationCategory': 'MultimediaApplication', 'operatingSystem': 'Any', 'browserRequirements': 'Requires JavaScript and a modern web browser.',
          'isAccessibleForFree': True, 'offers': {'@type': 'Offer', 'price': '0', 'priceCurrency': 'USD'}, 'featureList': sc.FEATURE_LIST,
-         'screenshot': base + OG_IMAGE_PATH, 'inLanguage': 'en', 'publisher': {'@id': org}},
+         'screenshot': base + asset('img/og-image.jpg'), 'inLanguage': 'en', 'publisher': {'@id': org}},
     ]
     kind = page.get('kind')
     webpage = {'@type': {'about': 'AboutPage'}.get(kind, 'ContactPage' if page['path'] == '/contact' else 'WebPage'), '@id': url + '#webpage', 'url': url,
                'name': page['title'], 'description': page['description'], 'isPartOf': {'@id': site}, 'about': {'@id': app}, 'inLanguage': 'en',
-               'dateModified': page['updated'], 'primaryImageOfPage': {'@type': 'ImageObject', 'url': base + OG_IMAGE_PATH, 'width': 1200, 'height': 630}}
+               'dateModified': page['updated'], 'primaryImageOfPage': {'@type': 'ImageObject', 'url': base + asset('img/og-image.jpg'), 'width': 1200, 'height': 630}}
     crumbs = page.get('breadcrumb') or []
     if crumbs:
         webpage['breadcrumb'] = {'@id': url + '#breadcrumb'}
@@ -184,7 +198,7 @@ def jsonld(page, base):
 def page_meta(page, base=None, noindex=False):
     """Template context shared by every page that extends base.html."""
     base = base or base_url()
-    return dict(page=page, canonical=page_url(base, page['path']) if page.get('path') else base + '/', og_image=base + OG_IMAGE_PATH,
+    return dict(page=page, canonical=page_url(base, page['path']) if page.get('path') else base + '/', og_image=base + asset('img/og-image.jpg'),
                 noindex=noindex, jsonld=None if noindex else jsonld(page, base), updated_display=display_date(page['updated']) if page.get('updated') else '')
 
 
@@ -211,7 +225,7 @@ def sitemap_xml(base):
 def llms_txt(base):
     home = sc.PAGES['/']
     lines = [f'# {sc.BRAND}', '', f'> {md_plain(home["lead"])}', '',
-             f'{sc.BRAND} is not affiliated with Instagram, Meta, LinkedIn or Pinterest. It only handles public posts, never asks for a login, and does not store files.', '',
+             f'{sc.BRAND} is not affiliated with Instagram, Meta, LinkedIn or Pinterest. It only handles public posts, never asks for a login, and deletes temporary files after transfer.', '',
              '## Key facts', '',
              f'- Cost: free during the beta, no account.',
              f'- Platforms: Instagram (Reels, photos, carousels), LinkedIn (images, videos, carousel slides, lnkd.in links), Pinterest (original-size images, MP4 video pins, pin.it links).',
@@ -265,6 +279,18 @@ def llms_full_txt(base):
         out += ['---', '', f'# {page["title"]}', f'URL: {page_url(base, path)}', '', md_absolute(page['lead'], base), '']
         for section in page['sections']:
             out += _section_markdown(section, base)
+    # Include policy pages as well: the summary's "every page" promise must
+    # include the actual configured analytics, advertising and contact copy.
+    from bs4 import BeautifulSoup
+    from flask import current_app
+    policy = current_app.extensions['policy_settings']()
+    for path, page in sc.LEGAL.items():
+        body = render_template('legal.html', slug=path.lstrip('/'), pages={p.lstrip('/'): m['name'] for p, m in sc.LEGAL.items()},
+                               **policy, **page_meta(page, base))
+        main = BeautifulSoup(body, 'html.parser').find('main')
+        out += ['---', '', f'# {page["title"]}', f'URL: {page_url(base, path)}', '']
+        for node in main.find_all(['h2', 'p']):
+            out += [('## ' if node.name == 'h2' else '') + node.get_text(' ', strip=True), '']
     return '\n'.join(out).rstrip() + '\n'
 
 
@@ -286,7 +312,7 @@ def security_txt(base):
 
 def manifest(base):
     return {'name': sc.BRAND, 'short_name': sc.BRAND, 'description': sc.PAGES['/']['description'], 'start_url': '/', 'scope': '/', 'display': 'browser',
-            'background_color': '#f4f8ff', 'theme_color': '#f4f8ff', 'lang': 'en',
+            'background_color': '#f5f3ed', 'theme_color': '#f5f3ed', 'lang': 'en',
             'icons': [{'src': '/static/icons/icon-192.png', 'sizes': '192x192', 'type': 'image/png'},
                       {'src': LOGO_PATH, 'sizes': '512x512', 'type': 'image/png'}]}
 
@@ -325,8 +351,8 @@ def canonical_redirect():
     """301 to the canonical host (when SITE_URL is set) and to the slash-less form of a path."""
     if request.method not in ('GET', 'HEAD') or request.path in HEALTH_PATHS:
         return None
-    explicit = os.environ.get('SITE_URL', '').strip().rstrip('/')
-    parts = urlsplit(explicit) if explicit.startswith(('https://', 'http://')) else None
+    explicit = configured_origin(os.environ.get('SITE_URL', ''))
+    parts = urlsplit(explicit) if explicit else None
     path = request.path
     wrong_host = bool(parts and parts.netloc.lower() != request.host.lower())
     wrong_scheme = bool(parts and parts.scheme != request.scheme)
@@ -341,9 +367,10 @@ def canonical_redirect():
     return redirect(target, code=301)
 
 
-def init_app(app, is_public):
+def init_app(app, is_public, policy_settings):
     """Register SEO routes and template helpers. is_public() is read per request (tests toggle it)."""
     app.jinja_env.filters['md'] = md_inline
+    app.extensions['policy_settings'] = policy_settings
     app.jinja_env.globals['asset'] = asset
 
     @app.context_processor

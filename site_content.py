@@ -9,8 +9,8 @@ import os
 
 BRAND = os.environ.get('SITE_NAME', '').strip() or 'PostSav'
 TAGLINE = 'Free Instagram, LinkedIn & Pinterest post downloader'
-UPDATED = '2026-10-04'
-LEGAL_UPDATED = '2026-10-04'
+UPDATED = '2026-10-14'
+LEGAL_UPDATED = '2026-10-14'
 TESTED_ON = '2 October 2026'
 GITHUB_URL = os.environ.get('GITHUB_URL', 'https://github.com/progcode05-sketch/postsav').strip()
 # Mirrors app.py (a test keeps the two in sync).
@@ -56,13 +56,13 @@ PLATFORM_CARDS = [
 ]
 
 FEATURES = [
-    ('feature-images', 'Hands holding a phone showing an Instagram feed', 720, 1080, '50% 38%', 'JPG · PNG · WebP', 'Images and photo carousels',
+    ('feature-images', 'Illustration of a JPG image file', 720, 1080, '50% 50%', 'JPG · PNG · WebP', 'Images and photo carousels',
      'Single photos and multi-image posts from Instagram and LinkedIn, plus full-size Pinterest pin images.'),
-    ('feature-video', 'A presenter being filmed with a cinema camera in a studio', 720, 484, '50% 50%', 'MP4', 'Videos and reels',
+    ('feature-video', 'Illustration of an MP4 video file', 720, 484, '50% 50%', 'MP4', 'Videos and reels',
      'Instagram reels, LinkedIn videos and Pinterest video pins as standard MP4 files.'),
-    ('feature-slides', 'A laptop showing a LinkedIn profile next to a phone', 720, 480, '50% 45%', 'Slide by slide', 'LinkedIn document slides',
+    ('feature-slides', 'Illustration of numbered slides in sequence', 720, 480, '50% 50%', 'Slide by slide', 'LinkedIn document slides',
      'Carousel documents saved slide by slide as images, kept in their original order.'),
-    ('feature-zip', 'A person using a laptop and a phone together', 720, 480, '50% 40%', 'bundle.zip', 'One-click ZIP',
+    ('feature-zip', 'Illustration of a ZIP bundle', 720, 480, '50% 50%', 'bundle.zip', 'One-click ZIP',
      'Everything in a post in a single download, named and ordered so it is easy to sort.'),
 ]
 
@@ -189,6 +189,7 @@ PAGES['/linkedin-downloader'] = dict(
             ('Can I download a LinkedIn carousel as a PDF?', f'Only when LinkedIn exposes the original document for download. In that case {B} shows a PDF option next to the slides. When LinkedIn requires sign-in for the PDF, you get the slides as images and a ZIP instead, and the restriction is not bypassed.'),
             ('Can I download LinkedIn videos?', f'Yes, for public video posts. {B} saves the highest-bitrate MP4 that LinkedIn exposes for the video, as a normal file you can play offline.'),
             (f'Does {B} work with lnkd.in links?', 'Yes. lnkd.in/p/ share links are followed safely to the original post, and tracking parameters are removed before the post is fetched.'),
+            ('Why does a lnkd.in video link open a sign-in page?', 'A share link can point to a post that LinkedIn does not expose to signed-out visitors. PostSav supports public activity and ugcPost links, but cannot retrieve an attachment when LinkedIn returns a sign-in page. Ask the author for the original file or a public version; changing the link format does not change access.'),
             ('Do I need to log in to LinkedIn?', f'No. {B} reads the public version of a post and never asks for your LinkedIn password or cookies. Posts that LinkedIn only shows to signed-in members cannot be fetched.'),
             (f'Why does {B} say there is nothing to download?', 'Text-only posts, article link previews, LinkedIn Learning items and live events have no image, video or document attachment to save. Private or restricted posts are also unavailable.'),
             ('Is it okay to download someone else\'s LinkedIn post?', 'Only save content you own or have permission to use. Posts are protected by copyright and by LinkedIn\'s terms. See our [terms](/terms) and the [LinkedIn User Agreement](https://www.linkedin.com/legal/user-agreement).'),
@@ -343,6 +344,8 @@ PAGES['/about'] = dict(
         dict(type='table', id='changes', kicker='Recently', heading='Recent changes',
              columns=['Date', 'Change'],
              rows=[
+                 ['14 October 2026', 'Rebuilt the interface, added an original visual identity and strengthened browser security.'],
+                 ['8 October 2026', 'Added clearer LinkedIn sign-in restriction messages and regression coverage for ugcPost share links.'],
                  ['3 October 2026', 'Added dedicated LinkedIn, Pinterest and Instagram pages, FAQs, structured data, a sitemap, robots.txt and llms.txt.'],
                  ['2 October 2026', 'Added Pinterest pins and pin.it links. Public beta launched with health checks, rate limits and shared sessions.'],
                  ['1 October 2026', 'First version: LinkedIn images, videos and carousel slides; Instagram Reels, photos and carousels.'],

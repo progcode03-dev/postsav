@@ -56,6 +56,13 @@ class GoogleServicesTests(unittest.TestCase):
             self.assertIn('uses Google AdSense', self.page('/privacy'))
             self.assertNotIn('adsbygoogle.js', self.page('/missing'))
 
+    def test_full_summary_contains_policies_and_current_google_disclosures(self):
+        with patch.dict(os.environ, {'GA_MEASUREMENT_ID': 'G-ABCD123456'}), patch.object(app, 'PUBLIC_MODE', True):
+            body = self.page('/llms-full.txt')
+            self.assertIn('http://localhost/privacy', body)
+            self.assertIn('Google Analytics only after you choose Allow analytics', body)
+            self.assertIn('http://localhost/contact', body)
+
     def test_no_google_tags_in_local_mode_or_error_pages(self):
         with patch.dict(os.environ, {'GA_MEASUREMENT_ID': 'G-ABCD123456', 'ADSENSE_PUBLISHER_ID': 'ca-pub-1234567890123456', 'ADSENSE_ENABLED': '1'}):
             with patch.object(app, 'PUBLIC_MODE', False):

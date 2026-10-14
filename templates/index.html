@@ -9,13 +9,15 @@
   {% include '_tool.html' %}
   <div class="chips"><span class="chip"><i class="dot" style="background:#2f6bff"></i>Images</span><span class="chip"><i class="dot" style="background:#e1306c"></i>Videos</span><span class="chip"><i class="dot" style="background:#0a66c2"></i>Carousel slides</span><span class="chip"><i class="dot" style="background:#e60023"></i>Pinterest pins</span><span class="chip"><i class="dot" style="background:#1aa86b"></i>ZIP bundle</span></div>
  </div>
- <div class="visual" aria-hidden="true">
-  <div class="orb"></div>
-  <div class="vcard v1"><span class="ic ig">IG</span><div><b>Instagram reel</b><small>Video · ready to save</small></div><i class="chk">✓</i></div>
-  <div class="vcard v2"><div style="display:flex;gap:12px;align-items:center"><span class="ic li">in</span><div><b>LinkedIn carousel</b><small>Slides · fetching…</small></div></div><div class="slides"><i></i><i></i><i></i><i></i><i></i></div><div class="bar"></div></div>
-  <div class="vcard v3"><span class="ic pin">P</span><div><b>Pinterest pin</b><small>Original size · ready</small></div><i class="chk">✓</i></div>
-  <div class="vcard v4"><span class="ic zip">ZIP</span><div><b>Download all</b><small>One ordered file</small></div></div>
- </div>
+ <aside class="save-board" aria-label="Example output formats">
+  <div class="board-label"><span>THE OUTPUT</span><span>01 / 03</span></div>
+  <div class="board-title">A post. A proper file.</div>
+  <p>Keep the original format.<br>Choose only what you need.</p>
+  <div class="file-row"><span class="file-type">MP4</span><div><b>Moving pictures</b><small>Videos &amp; reels</small></div><span class="file-number">01</span></div>
+  <div class="file-row"><span class="file-type">JPG</span><div><b>The whole picture</b><small>Images &amp; carousel slides</small></div><span class="file-number">02</span></div>
+  <div class="file-row"><span class="file-type">ZIP</span><div><b>Everything, in order</b><small>One post, one bundle</small></div><span class="file-number">03</span></div>
+  <div class="board-note">Illustrative formats · availability varies by post</div>
+ </aside>
 </section>
 {% include '_result.html' %}
 {% for s in page.sections %}{{ blocks.section(s) }}

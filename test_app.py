@@ -71,6 +71,14 @@ class DownloaderTests(unittest.TestCase):
         self.assertIn(r.json['session'], app.sessions)
         self.assertEqual(self.client.post('/api/info', json=[]).status_code, 400)
 
+    def test_info_never_exposes_untrusted_preview_hosts(self):
+        for preview in ('https://tracker.example/image.jpg', 'http://media.licdn.com/image.jpg', 'https://media.licdn.com.evil.test/image.jpg'):
+            post = dict(self.post, assets=[dict(kind='image', source='https://media.licdn.com/photo', thumbnail=preview)])
+            with patch('app.linkedin_post', return_value=post):
+                response = self.client.post('/api/info', json={'url': self.post['url'], 'ack': True})
+            self.assertEqual(response.status_code, 200)
+            self.assertIsNone(response.json['assets'][0]['thumbnail'])
+
     def test_individual_and_zip(self):
         token = app.remember(self.post)
         def fake_asset(_post, _asset, index, workdir):

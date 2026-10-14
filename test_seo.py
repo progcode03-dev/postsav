@@ -1,5 +1,7 @@
 """Offline tests for SEO and GEO: metadata, structured data, crawler files, headers, redirects and link integrity."""
 import json
+import base64
+import hashlib
 import os
 import re
 import subprocess
@@ -82,7 +84,7 @@ class MetadataTests(Base):
             soup = soup_of(self.client, path)
             for prop in ('og:type', 'og:site_name', 'og:title', 'og:description', 'og:url', 'og:image', 'og:image:width', 'og:image:height', 'og:image:alt'):
                 self.assertTrue(soup.find('meta', property=prop), f'{path} lacks {prop}')
-            self.assertEqual(soup.find('meta', property='og:image')['content'], 'http://localhost/static/img/og-image.jpg')
+            self.assertEqual(soup.find('meta', property='og:image')['content'], 'http://localhost' + seo.asset('img/og-image.jpg'))
             self.assertEqual(soup.find('meta', attrs={'name': 'twitter:card'})['content'], 'summary_large_image')
             self.assertEqual(soup.find('meta', property='og:title')['content'], soup.title.string.strip())
 
@@ -90,9 +92,9 @@ class MetadataTests(Base):
         soup = soup_of(self.client, '/')
         rels = {tuple(link.get('rel')): link['href'] for link in soup.find_all('link')}
         self.assertIn(('icon',), rels)
-        self.assertTrue(any(link['href'] == '/favicon.ico' for link in soup.find_all('link', rel='icon')))
-        self.assertTrue(any(link['href'].endswith('.svg') for link in soup.find_all('link', rel='icon')))
-        self.assertEqual(rels[('apple-touch-icon',)], '/static/icons/apple-touch-icon.png')
+        self.assertTrue(any(link['href'].split('?')[0] == '/favicon.ico' for link in soup.find_all('link', rel='icon')))
+        self.assertTrue(any(link['href'].split('?')[0].endswith('.svg') for link in soup.find_all('link', rel='icon')))
+        self.assertEqual(rels[('apple-touch-icon',)], seo.asset('icons/apple-touch-icon.png'))
         self.assertEqual(rels[('manifest',)], '/site.webmanifest')
         self.assertRegex(rels[('stylesheet',)], r'^/static/site\.css\?v=[0-9a-f]{8}$')
 
@@ -142,7 +144,7 @@ class StructuredDataTests(Base):
             for kind in ('Organization', 'WebSite', 'WebApplication'):
                 self.assertIn(kind, nodes, f'{path} lacks {kind}')
             org, application = nodes['Organization'], nodes['WebApplication']
-            self.assertEqual(org['logo']['url'], 'http://localhost/static/icons/icon-512.png')
+            self.assertEqual(org['logo']['url'], 'http://localhost' + seo.asset('icons/icon-512.png'))
             self.assertEqual(application['offers'], {'@type': 'Offer', 'price': '0', 'priceCurrency': 'USD'})
             self.assertTrue(application['isAccessibleForFree'])
             self.assertEqual(application['applicationCategory'], 'MultimediaApplication')
@@ -195,7 +197,7 @@ class StructuredDataTests(Base):
         for path in ALL_PATHS:
             page = next(n for n in graph(soup_of(self.client, path)) if n['@type'] in ('WebPage', 'AboutPage', 'ContactPage'))
             self.assertRegex(page['dateModified'], r'^\d{4}-\d{2}-\d{2}$')
-            self.assertEqual(page['primaryImageOfPage']['url'], 'http://localhost/static/img/og-image.jpg')
+            self.assertEqual(page['primaryImageOfPage']['url'], 'http://localhost' + seo.asset('img/og-image.jpg'))
         self.assertEqual(next(n for n in graph(soup_of(self.client, '/about')) if n['@type'] == 'AboutPage')['url'], 'http://localhost/about')
         self.assertEqual(next(n for n in graph(soup_of(self.client, '/contact')) if n['@type'] == 'ContactPage')['url'], 'http://localhost/contact')
 
@@ -310,6 +312,27 @@ class CrawlerFileTests(Base):
 
 
 class HeaderAndRedirectTests(Base):
+    def test_browser_security_policy_allows_only_the_page_structured_data_inline(self):
+        response = self.client.get('/')
+        text = response.get_data(as_text=True)
+        script = re.search(r'<script type="application/ld\+json">(.*?)</script>', text, re.S)[1]
+        digest = base64.b64encode(hashlib.sha256(script.encode()).digest()).decode()
+        policy = response.headers['Content-Security-Policy']
+        self.assertIn(f"'sha256-{digest}'", policy)
+        self.assertIn("frame-ancestors 'none'", policy)
+        self.assertIn("object-src 'none'", policy)
+        self.assertNotIn("'unsafe-inline'", policy.split('script-src ')[1].split(';')[0])
+        self.assertEqual(response.headers['X-Frame-Options'], 'DENY')
+        cached = self.client.get('/', headers={'If-None-Match': response.headers['ETag']})
+        self.assertEqual(cached.status_code, 304)
+        self.assertEqual(cached.headers['Content-Security-Policy'], policy)
+
+    def test_malformed_canonical_settings_cannot_create_redirects(self):
+        for origin in ('https://user:pass@evil.test', 'https://evil.test/path', 'https://evil.test?tracking=1', 'https://evil.test#fragment', 'https://evil.test:99999'):
+            with self.subTest(origin=origin), patch.dict(os.environ, {'SITE_URL': origin, 'RENDER_EXTERNAL_URL': ''}):
+                self.assertEqual(self.client.get('/about').status_code, 200)
+                self.assertIsNone(seo.configured_origin(origin))
+
     def test_operational_endpoints_are_noindex_and_uncached(self):
         for path in ('/healthz', '/readyz'):
             headers = self.client.get(path).headers
