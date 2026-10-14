@@ -12,6 +12,8 @@
 
 ## Your account checklist
 
+0. **Render deployment:** the repository now lives at `https://github.com/progcode03-dev/postsav`. If the service still shows the old design, open Render's service Settings and confirm this repository and the `main` branch are connected. Then choose Manual Deploy, Deploy latest commit. The application redesign is commit `c57c328`. Check Events/build logs if deployment fails. The new homepage has a green folded-page logo and an “A post. A proper file.” panel.
+
 1. **Google Search Console:** add `https://social-downloader-75g8.onrender.com/` as a URL-prefix property. Choose HTML-tag verification, copy its token into `GOOGLE_SITE_VERIFICATION` in Render, deploy, then click Verify. Submit `sitemap.xml`. Inspect the home page and each of the three platform pages and request indexing once if needed. Watch Page indexing and Performance reports rather than repeatedly resubmitting.
 2. **Bing Webmaster Tools:** import the verified property from Search Console or use its HTML meta token via `BING_SITE_VERIFICATION`. Submit the sitemap. IndexNow is available via `python indexnow.py https://social-downloader-75g8.onrender.com` after substantive updates.
 3. **Analytics:** ID `G-JMK4H2LRD3` is configured. Check Realtime after visiting and accepting Analytics. Disable Enhanced measurement in the web stream to avoid automatic form/link events exposing submitted post URLs. Link Search Console to Analytics if useful. Analytics itself does not boost rankings.

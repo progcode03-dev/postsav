@@ -27,3 +27,9 @@ Follow `SEO.md` for Search Console/Bing verification, sitemap submission, Analyt
 ## Limits
 
 This is not a penetration test or a guarantee that every platform post will work. The deployment remains a single-worker beta: rate limiting and download slots are process-local, and extraction depends on public platform responses. Broad search rankings, Google indexing, AdSense approval and AI citations cannot be guaranteed by adding metadata.
+
+## Push and production follow-up
+
+Application changes were pushed as `c57c328` to `progcode03-dev/postsav/main`. GitHub reported the repository transfer, and origin was updated to its new location.
+
+On 14 October, all seven deployed API/media sample checks passed: acknowledgment, invalid URL, expired session, missing API endpoint, LinkedIn eight-image carousel with ZIP validation, Pinterest image and Instagram reel. Results are in deployed-check-results.json. At the time of this verification, Render was still serving the previous CSS and layout and did not expose the new CSP, so these results must not be represented as validation of the redesigned production release. Local validation covered the redesign. Check Render's repository connection and deploy the latest commit as described in SEO.md.
