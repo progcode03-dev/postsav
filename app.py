@@ -24,7 +24,7 @@ import requests
 import yt_dlp
 from media_sources import PINTEREST_HOST, allowed_url, download_to_path, linkedin_post, instagram_post, pinterest_pin_url, pinterest_post
 from limits import DownloadGate, RateLimiter
-from youtube_sources import youtube_url, youtube_post, download_youtube
+from youtube_sources import YouTubeExtractionError, youtube_url, youtube_post, download_youtube
 import seo
 import site_content
 
@@ -456,6 +456,7 @@ def readyz():
     body = dict(status='ready' if ready else 'degraded', checks=checks, active_downloads=download_gate.active,
                 ffmpeg=HAS_FFMPEG, public_mode=PUBLIC_MODE, legal_contact_configured=bool(CONTACT_EMAIL),
                 youtube_processing=dict(ffmpeg=HAS_FFMPEG,
+                                        extractor_version=yt_dlp.version.__version__,
                                         javascript_runtime='node' if shutil.which('node') else 'deno' if shutil.which('deno') else None,
                                         ejs=importlib.util.find_spec('yt_dlp_ejs') is not None))
     return jsonify(body), 200 if ready else 503
@@ -493,6 +494,9 @@ def info():
         return jsonify(public)
     except Exception as err:
         app.logger.warning('Extraction failed for %s: %s', urlsplit(url).hostname, type(err).__name__)
+        if isinstance(err, YouTubeExtractionError):
+            return jsonify(error=str(err), code='youtube_extraction_failed', provider_detail=err.provider_detail,
+                           extractor_version=yt_dlp.version.__version__), 502
         return jsonify(error=friendly_error(err)), 502
 
 

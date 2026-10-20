@@ -6,7 +6,7 @@ from unittest.mock import MagicMock, patch
 import app
 from limits import DownloadGate
 from media_sources import allowed_url
-from youtube_sources import youtube_url, format_choices, youtube_post, download_youtube, options
+from youtube_sources import YouTubeExtractionError, youtube_url, format_choices, youtube_post, download_youtube, options
 
 ID = 'BaW_jenozKc'
 URL = 'https://www.youtube.com/watch?v=' + ID
@@ -105,6 +105,12 @@ class ChoiceTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, 'limiting requests') as error:
                 youtube_post(URL, {}, MAX, True)
         self.assertNotIn('cookies', str(error.exception))
+
+    def test_diagnostics_remove_urls_video_ids_and_cookie_instructions(self):
+        error = YouTubeExtractionError('Public message', RuntimeError(f'[youtube] {ID}: Failed https://example.com/?secret=abc Use --cookies secret.txt'), URL)
+        self.assertNotIn(ID, error.provider_detail)
+        self.assertNotIn('secret', error.provider_detail)
+        self.assertNotIn('https://', error.provider_detail)
 
 
 class DownloadTests(unittest.TestCase):
