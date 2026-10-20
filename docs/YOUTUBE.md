@@ -39,3 +39,7 @@ The local Docker daemon was not running, so the image build itself could not be 
 - [YouTube JavaScript runtime and EJS setup](https://github.com/yt-dlp/yt-dlp/wiki/EJS)
 
 Keep AdSense disabled until its separate approval and consent setup are complete. Adding YouTube support does not establish eligibility under Google's publisher policies.
+
+## Hosted follow-up
+
+The Render deployment of `32bb265` became live: `/youtube-downloader` returned 200, and readiness reported ffmpeg, Node and EJS present. All ten pages passed the deployed SEO checks. A hosted lookup of the public Big Buck Bunny sample returned 502 with the message that YouTube could not expose the video. Consequently successful live YouTube extraction/download is still unverified; the processing and browser tests above must not be represented as proof that every public YouTube URL works on Render.

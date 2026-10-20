@@ -17,7 +17,7 @@ from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import yt_dlp
-from youtube_sources import download_youtube, format_choices
+from youtube_sources import download_youtube, format_choices, youtube_post
 
 
 class QuietHandler(SimpleHTTPRequestHandler):
@@ -59,10 +59,15 @@ def main():
             asset = dict(youtube_options=choices)
             post = dict(url=info['webpage_url'])
 
-            def fixture_ydl(opts):
+            def fixture_ydl(opts, fixture=info):
                 instance = real_ydl(opts)
-                instance.extract_info = lambda _url, download=True: instance.process_ie_result(copy.deepcopy(info), download=download)
+                instance.extract_info = lambda _url, download=True: instance.process_ie_result(copy.deepcopy(fixture), download=download)
                 return instance
+
+            audio_info = dict(metadata, formats=[metadata['formats'][1]])
+            with patch('youtube_sources.yt_dlp.YoutubeDL', side_effect=functools.partial(fixture_ydl, fixture=audio_info)):
+                audio_post = youtube_post(post['url'], dict(quiet=True, no_warnings=True), 2 * 1024 * 1024, True)
+                assert all(choice['id'].startswith('mp3-') for choice in audio_post['assets'][0]['choices'])
 
             for choice in ['mp4-240', 'mp3-128', 'mp3-192', 'mp3-256', 'mp3-320']:
                 directory = root / choice

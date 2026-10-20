@@ -33,7 +33,7 @@ def options(base_options):
     result.pop('cookiefile', None)
     result.pop('cookiesfrombrowser', None)
     result.update(noplaylist=True, skip_download=False, js_runtimes={'node': {}, 'deno': {}},
-                  cachedir=False, extract_flat=False, format='bestvideo+bestaudio/best')
+                  cachedir=False, extract_flat=False, format='bestvideo+bestaudio/best/bestaudio/bestvideo')
     return result
 
 
