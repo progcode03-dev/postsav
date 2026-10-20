@@ -6,16 +6,35 @@ from urllib.parse import parse_qs, urlsplit
 import yt_dlp
 
 
+def safe_detail(value, url):
+    detail = re.sub(r'\x1b\[[0-9;]*m', '', str(value))
+    detail = detail.replace(parse_qs(urlsplit(url).query).get('v', [''])[0], '[video]')
+    detail = re.sub(r'https?://\S+', '[URL]', detail)
+    detail = re.sub(r'(?:[A-Za-z]:[\\/]|/(?:app|usr|tmp|home|opt)/)\S+', '[path]', detail)
+    detail = re.sub(r'(?is)\b(?:use --cookies|cookie:|authorization:|password:).*', '[redacted]', detail)
+    return ' '.join(detail.split())[:400]
+
+
+class DiagnosticLogger:
+    def __init__(self):
+        self.warnings = []
+
+    def debug(self, _message):
+        pass
+
+    def warning(self, message):
+        self.warnings.append(str(message))
+        self.warnings = self.warnings[-5:]
+
+    error = warning
+
+
 class YouTubeExtractionError(ValueError):
     """A safe user message plus request-scoped diagnostics, never credentials or URLs."""
-    def __init__(self, message, cause, url):
+    def __init__(self, message, cause, url, warnings=()):
         super().__init__(message)
-        detail = re.sub(r'\x1b\[[0-9;]*m', '', str(cause))
-        detail = detail.replace(parse_qs(urlsplit(url).query).get('v', [''])[0], '[video]')
-        detail = re.sub(r'https?://\S+', '[URL]', detail)
-        detail = re.sub(r'(?:[A-Za-z]:[\\/]|/(?:app|usr|tmp|home|opt)/)\S+', '[path]', detail)
-        detail = re.sub(r'(?is)\b(?:use --cookies|cookie:|authorization:|password:).*', '[redacted]', detail)
-        self.provider_detail = ' '.join(detail.split())[:400]
+        self.provider_detail = safe_detail(cause, url)
+        self.provider_warnings = [safe_detail(warning, url) for warning in warnings]
 
 
 def youtube_url(raw):
@@ -94,13 +113,16 @@ def format_choices(data, max_file, ffmpeg):
 
 
 def youtube_post(url, base_options, max_file, ffmpeg):
+    diagnostic = DiagnosticLogger()
+    opts = options(base_options)
+    opts['logger'] = diagnostic
     try:
-        with yt_dlp.YoutubeDL(options(base_options)) as ydl:
+        with yt_dlp.YoutubeDL(opts) as ydl:
             data = ydl.extract_info(url, download=False)
     except yt_dlp.utils.DownloadError as error:
         if any(phrase in str(error).lower() for phrase in ('sign in', 'not a bot', 'login', 'cookies', '403', '429')):
-            raise YouTubeExtractionError('YouTube is requiring sign-in or limiting requests from this server. This video cannot be fetched right now; try again later or use an official download option.', error, url) from error
-        raise YouTubeExtractionError('YouTube could not expose this video. It may be unavailable, restricted or temporarily blocked.', error, url) from error
+            raise YouTubeExtractionError('YouTube is requiring sign-in or limiting requests from this server. This video cannot be fetched right now; try again later or use an official download option.', error, url, diagnostic.warnings) from error
+        raise YouTubeExtractionError('YouTube could not expose this video. It may be unavailable, restricted or temporarily blocked.', error, url, diagnostic.warnings) from error
     expected = parse_qs(urlsplit(url).query)['v'][0]
     if not data or data.get('_type') in ('playlist', 'multi_video') or data.get('id') != expected:
         raise ValueError('YouTube did not return the requested video. Paste a single video or Shorts link.')

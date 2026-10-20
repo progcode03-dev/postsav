@@ -496,6 +496,7 @@ def info():
         app.logger.warning('Extraction failed for %s: %s', urlsplit(url).hostname, type(err).__name__)
         if isinstance(err, YouTubeExtractionError):
             return jsonify(error=str(err), code='youtube_extraction_failed', provider_detail=err.provider_detail,
+                           provider_warnings=err.provider_warnings,
                            extractor_version=yt_dlp.version.__version__), 502
         return jsonify(error=friendly_error(err)), 502
 
