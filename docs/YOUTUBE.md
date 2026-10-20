@@ -43,3 +43,25 @@ Keep AdSense disabled until its separate approval and consent setup are complete
 ## Hosted follow-up
 
 The Render deployment of `32bb265` became live: `/youtube-downloader` returned 200, and readiness reported ffmpeg, Node and EJS present. All ten pages passed the deployed SEO checks. A hosted lookup of the public Big Buck Bunny sample returned 502 with the message that YouTube could not expose the video. Consequently successful live YouTube extraction/download is still unverified; the processing and browser tests above must not be represented as proof that every public YouTube URL works on Render.
+
+## Investigation of every-link failures
+
+On 20 October, bounded provider warnings identified the actual hosted failure: YouTube returned HTTP 429 for its webpage and HTTP 403 for the player API attempts. The final yt-dlp exception omitted those warnings and only said “Failed to extract any player response.” This caused the application to incorrectly suggest that each video was unavailable. Production already had yt-dlp 2026.08.19, Node and EJS; updating page markup or the quality selector cannot resolve this network refusal.
+
+The same public video was successfully looked up on the development machine without browser cookies. Its actual 144p MP4 (4,269,067 bytes) and 128 kbps MP3 (3,143,852 bytes) were downloaded using the application's processing functions, decoded successfully with ffmpeg and removed after testing. This verifies the local pipeline, not the Render connection.
+
+The application now examines warnings as well as the final exception, reports upstream blocking with HTTP 503 and `youtube_server_blocked`, and preserves distinct handling for unavailable videos. Download-stage blocks use the same handling and release job slots. Bounded sanitized provider diagnostics stay in operator logs rather than the public API. The site does not automatically retry blocked downloads.
+
+All 178 Python tests pass, including regressions for hidden HTTP warnings, unavailable-video classification, private diagnostics, download-slot cleanup and proxy configuration validation.
+
+### Restoring the hosted connection
+
+The current Render connection remains blocked. There is no working alternative server or proxy configured. The feature must not be described as working publicly until an actual deployed lookup and media download succeed.
+
+An operator can either run this application on a server whose outbound connection YouTube accepts, or configure a trusted HTTP(S) proxy they are authorized to use. Test that connection before purchasing or migrating; a different hosting provider alone does not guarantee access.
+
+For an authorized proxy, set `YOUTUBE_PROXY_URL` in Render's secret environment settings to the provider's HTTP(S) proxy URL (for example, `http://USER:PASSWORD@HOST:PORT`), then redeploy. Percent-encode special characters in credentials. Never commit the real value, put it in browser JavaScript, or send it through `/api/info`. The same setting is used for metadata and media downloads because extracted media can be bound to the originating connection. No proxy is supplied or selected automatically, and setting this variable does not guarantee YouTube will accept the connection.
+
+After deployment, fetch a known public video through `/youtube-downloader` and download both a small MP4 and an MP3. Verify audio/video playback. `/readyz` only checks dependencies; it does not establish upstream YouTube availability. If `youtube_server_blocked` persists, inspect Render's sanitized logs and resolve access with the hosting/network provider.
+
+The upstream [yt-dlp FAQ on HTTP 429](https://github.com/yt-dlp/yt-dlp/wiki/FAQ#http-error-429-too-many-requests-or-402-payment-required) explains that this response indicates an IP access block.

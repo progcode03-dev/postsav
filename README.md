@@ -142,3 +142,5 @@ The UI lists MP4 qualities actually exposed by each video (including 144p throug
 Production Docker includes ffmpeg, Node 22 and `yt-dlp[default]`/EJS. Local use needs ffmpeg on PATH and Node 22+ or Deno 2.3+ for full functionality. Without ffmpeg only exposed combined MP4 formats are offered. Personal Instagram/browser cookies are never reused for YouTube.
 
 YouTube can refuse hosting IPs or require sign-in even when its page is visible in a browser. A supported runtime does not guarantee successful extraction; the service does not bypass these restrictions. See `docs/YOUTUBE.md` for validation results and limitations.
+
+The current Render connection returns YouTube HTTP 429/403 responses. The application reports this as `youtube_server_blocked` (HTTP 503); the public YouTube feature remains unavailable until outbound access is restored. An operator-managed HTTP(S) proxy can be configured through the secret `YOUTUBE_PROXY_URL` environment variable, used for both lookup and download. No proxy is included. See `docs/YOUTUBE.md` for setup and required live verification.

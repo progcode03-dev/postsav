@@ -8,7 +8,9 @@ import yt_dlp
 
 def safe_detail(value, url):
     detail = re.sub(r'\x1b\[[0-9;]*m', '', str(value))
-    detail = detail.replace(parse_qs(urlsplit(url).query).get('v', [''])[0], '[video]')
+    identifier = parse_qs(urlsplit(url).query).get('v', [''])[0]
+    if identifier:
+        detail = detail.replace(identifier, '[video]')
     detail = re.sub(r'https?://\S+', '[URL]', detail)
     detail = re.sub(r'(?:[A-Za-z]:[\\/]|/(?:app|usr|tmp|home|opt)/)\S+', '[path]', detail)
     detail = re.sub(r'(?is)\b(?:use --cookies|cookie:|authorization:|password:).*', '[redacted]', detail)
@@ -31,10 +33,29 @@ class DiagnosticLogger:
 
 class YouTubeExtractionError(ValueError):
     """A safe user message plus request-scoped diagnostics, never credentials or URLs."""
-    def __init__(self, message, cause, url, warnings=()):
+    def __init__(self, message, cause, url, warnings=(), code='youtube_extraction_failed', status=502):
         super().__init__(message)
+        self.code = code
+        self.status = status
         self.provider_detail = safe_detail(cause, url)
         self.provider_warnings = [safe_detail(warning, url) for warning in warnings]
+
+
+def extraction_error(cause, url, warnings=(), downloading=False):
+    # yt-dlp's final exception can omit the HTTP errors from its client attempts.
+    # Inspect those warnings too, rather than blaming every video for a host block.
+    details = '\n'.join([str(cause), *warnings]).lower()
+    rate_limited = bool(re.search(r'http (?:error )?429\b|too many requests', details))
+    access_blocked = bool(re.search(r'http (?:error )?403\b', details)) or any(
+        phrase in details for phrase in ('not a bot', 'sign in to confirm'))
+    if rate_limited or access_blocked:
+        return YouTubeExtractionError(
+            'YouTube is blocking or limiting requests from our server. YouTube downloads are currently unavailable here. '
+            'Changing the video link will not resolve this server connection issue.',
+            cause, url, warnings, code='youtube_server_blocked', status=503)
+    message = ('YouTube could not provide the selected format. Fetch the video again or choose a lower quality.'
+               if downloading else 'YouTube could not load this video. It may be unavailable or restricted.')
+    return YouTubeExtractionError(message, cause, url, warnings)
 
 
 def youtube_url(raw):
@@ -65,6 +86,18 @@ def options(base_options):
     result.pop('cookiesfrombrowser', None)
     result.update(noplaylist=True, skip_download=False, js_runtimes={'node': {}, 'deno': {}},
                   cachedir=False, extract_flat=False, format='bestvideo+bestaudio/best/bestaudio/bestvideo')
+    proxy = os.environ.get('YOUTUBE_PROXY_URL', '').strip()
+    if proxy:
+        try:
+            parsed = urlsplit(proxy)
+            if (parsed.scheme not in ('http', 'https') or not parsed.hostname
+                    or parsed.path not in ('', '/') or parsed.query or parsed.fragment
+                    or any(ord(c) <= 32 for c in proxy) or parsed.port == 0):
+                raise ValueError
+        except ValueError:
+            raise ValueError('The server administrator must correct YOUTUBE_PROXY_URL.') from None
+        # One operator-managed connection for metadata AND media; never visitor input.
+        result['proxy'] = proxy
     return result
 
 
@@ -120,9 +153,7 @@ def youtube_post(url, base_options, max_file, ffmpeg):
         with yt_dlp.YoutubeDL(opts) as ydl:
             data = ydl.extract_info(url, download=False)
     except yt_dlp.utils.DownloadError as error:
-        if any(phrase in str(error).lower() for phrase in ('sign in', 'not a bot', 'login', 'cookies', '403', '429')):
-            raise YouTubeExtractionError('YouTube is requiring sign-in or limiting requests from this server. This video cannot be fetched right now; try again later or use an official download option.', error, url, diagnostic.warnings) from error
-        raise YouTubeExtractionError('YouTube could not expose this video. It may be unavailable, restricted or temporarily blocked.', error, url, diagnostic.warnings) from error
+        raise extraction_error(error, url, diagnostic.warnings) from error
     expected = parse_qs(urlsplit(url).query)['v'][0]
     if not data or data.get('_type') in ('playlist', 'multi_video') or data.get('id') != expected:
         raise ValueError('YouTube did not return the requested video. Paste a single video or Shorts link.')
@@ -157,6 +188,8 @@ def download_youtube(post, asset, workdir, base_options, max_file, ffmpeg):
             raise ValueError('This selection exceeds 250 MB. Choose a lower quality or MP3 bitrate.')
 
     opts = options(base_options)
+    diagnostic = DiagnosticLogger()
+    opts['logger'] = diagnostic
     opts.update(format=choice['format'], outtmpl=os.path.join(workdir, 'youtube.%(ext)s'),
                 progress_hooks=[bounded_progress], max_filesize=max_file, continuedl=False,
                 merge_output_format='mp4', writethumbnail=False, writesubtitles=False)
@@ -168,7 +201,7 @@ def download_youtube(post, asset, workdir, base_options, max_file, ffmpeg):
         with yt_dlp.YoutubeDL(opts) as ydl:
             ydl.extract_info(post['url'], download=True)
     except yt_dlp.utils.DownloadError as error:
-        raise ValueError('YouTube could not provide the selected format. The link or formats may have changed, access may be limited, or the file may exceed 250 MB. Fetch the video again or choose a lower quality.') from error
+        raise extraction_error(error, post['url'], diagnostic.warnings, downloading=True) from error
     path = os.path.join(workdir, 'youtube.' + choice['extension'])
     if not os.path.isfile(path) or not 0 < os.path.getsize(path) <= max_file:
         raise ValueError('The selected format could not be prepared within the file limit. Try a lower quality.')

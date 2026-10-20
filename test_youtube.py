@@ -1,4 +1,5 @@
 import tempfile
+import os
 import unittest
 from pathlib import Path
 from unittest.mock import MagicMock, patch
@@ -105,6 +106,41 @@ class ChoiceTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, 'limiting requests') as error:
                 youtube_post(URL, {}, MAX, True)
         self.assertNotIn('cookies', str(error.exception))
+        self.assertEqual(error.exception.code, 'youtube_server_blocked')
+
+    def test_client_warnings_classify_host_block_when_final_exception_hides_it(self):
+        import yt_dlp
+        for warning in ('Unable to download webpage: HTTP Error 429: Too Many Requests',
+                        'Unable to download API page: HTTP Error 403: Forbidden'):
+            with self.subTest(warning=warning), patch('youtube_sources.yt_dlp.YoutubeDL') as factory:
+                def fail(*_args, **_kwargs):
+                    factory.call_args.args[0]['logger'].warning(warning)
+                    raise yt_dlp.utils.DownloadError('Failed to extract any player response')
+                factory.return_value.__enter__.return_value.extract_info.side_effect = fail
+                with self.assertRaises(YouTubeExtractionError) as error:
+                    youtube_post(URL, {}, MAX, True)
+                self.assertEqual(error.exception.code, 'youtube_server_blocked')
+                self.assertEqual(error.exception.status, 503)
+
+    def test_removed_video_is_not_reported_as_a_server_block(self):
+        import yt_dlp
+        with patch('youtube_sources.yt_dlp.YoutubeDL') as factory:
+            factory.return_value.__enter__.return_value.extract_info.side_effect = yt_dlp.utils.DownloadError('Video unavailable. This video has been removed.')
+            with self.assertRaises(YouTubeExtractionError) as error:
+                youtube_post(URL, {}, MAX, True)
+        self.assertEqual(error.exception.code, 'youtube_extraction_failed')
+        self.assertEqual(error.exception.status, 502)
+
+    def test_operator_proxy_is_optional_and_validated_without_exposing_credentials(self):
+        with patch.dict(os.environ, {'YOUTUBE_PROXY_URL': ''}):
+            self.assertNotIn('proxy', options({}))
+        with patch.dict(os.environ, {'YOUTUBE_PROXY_URL': 'http://user:secret@proxy.example:8080'}):
+            self.assertEqual(options({})['proxy'], os.environ['YOUTUBE_PROXY_URL'])
+        for value in ('socks5://proxy.example', 'https://proxy.example:999999', 'http://',
+                      'http://proxy.example/path', 'http://proxy.\nexample', 'http://proxy.example?token=secret'):
+            with self.subTest(value=value), patch.dict(os.environ, {'YOUTUBE_PROXY_URL': value}):
+                with self.assertRaisesRegex(ValueError, '^The server administrator must correct YOUTUBE_PROXY_URL.$'):
+                    options({})
 
     def test_diagnostics_remove_urls_video_ids_and_cookie_instructions(self):
         error = YouTubeExtractionError('Public message', RuntimeError(f'[youtube] {ID}: Failed https://example.com/?secret=abc Use --cookies secret.txt'), URL)
@@ -155,6 +191,25 @@ class ApiTests(unittest.TestCase):
         self.assertIn('choices', asset)
         self.assertNotIn('youtube_options', asset)
         self.assertNotIn('source', asset)
+
+    def test_server_block_status_and_diagnostics_are_private(self):
+        error = YouTubeExtractionError('YouTube is blocking requests from our server.', 'HTTP Error 429', URL,
+                                       code='youtube_server_blocked', status=503)
+        with patch('app.youtube_post', side_effect=error), patch.object(app.app.logger, 'warning'):
+            response = self.client.post('/api/info', json={'url': URL, 'ack': True})
+        self.assertEqual(response.status_code, 503)
+        self.assertEqual(response.json, {'error': str(error), 'code': 'youtube_server_blocked'})
+        self.assertEqual(app.sessions, {})
+
+    def test_blocked_download_releases_slot_and_reports_service_unavailable(self):
+        token = app.remember(self.data)
+        error = YouTubeExtractionError('YouTube is blocking requests from our server.', 'HTTP Error 403', URL,
+                                       code='youtube_server_blocked', status=503)
+        with patch('app.download_youtube', side_effect=error), patch.object(app.app.logger, 'warning'):
+            response = self.client.get('/api/download', query_string=dict(session=token, asset='0', format='mp4-720'))
+        self.assertEqual(response.status_code, 503)
+        self.assertEqual(response.json['code'], 'youtube_server_blocked')
+        self.assertEqual(app.download_gate.active, 0)
 
     def test_forged_choices_and_zip_are_rejected_without_consuming_slot(self):
         token = app.remember(self.data)

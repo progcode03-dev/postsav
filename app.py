@@ -495,10 +495,15 @@ def info():
     except Exception as err:
         app.logger.warning('Extraction failed for %s: %s', urlsplit(url).hostname, type(err).__name__)
         if isinstance(err, YouTubeExtractionError):
-            return jsonify(error=str(err), code='youtube_extraction_failed', provider_detail=err.provider_detail,
-                           provider_warnings=err.provider_warnings,
-                           extractor_version=yt_dlp.version.__version__), 502
+            return youtube_failure(err)
         return jsonify(error=friendly_error(err)), 502
+
+
+def youtube_failure(error):
+    # Keep bounded, sanitized provider diagnostics in operator logs, not public API responses.
+    app.logger.warning('YouTube failure code=%s extractor=%s detail=%s warnings=%s',
+                       error.code, yt_dlp.version.__version__, error.provider_detail, error.provider_warnings)
+    return jsonify(error=str(error), code=error.code), error.status
 
 
 def busy(message, retry):
@@ -550,6 +555,8 @@ def download():
         release()
         if workdir:
             shutil.rmtree(workdir, ignore_errors=True)
+        if isinstance(err, YouTubeExtractionError):
+            return youtube_failure(err)
         return jsonify(error=friendly_error(err)), 502
 
 
