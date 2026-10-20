@@ -1,14 +1,14 @@
-# PostSav: free Instagram, LinkedIn & Pinterest post downloader
+# PostSav: YouTube and social media downloader
 
-**Live site:** https://social-downloader-75g8.onrender.com. Paste the link of a public Instagram, LinkedIn or Pinterest post and download its images, videos and carousel slides, one by one or as a ZIP. No account, no watermark, and files are deleted when the transfer ends. Platform guides: [LinkedIn carousel, video and image downloader](https://social-downloader-75g8.onrender.com/linkedin-downloader), [Pinterest video and image downloader (pin.it)](https://social-downloader-75g8.onrender.com/pinterest-downloader), [Instagram Reel, photo and carousel downloader](https://social-downloader-75g8.onrender.com/instagram-downloader).
+**Live site:** https://social-downloader-75g8.onrender.com. Paste an individual public YouTube video link or the link of a public Instagram, LinkedIn or Pinterest post and download its images, videos and carousel slides, one by one or as a ZIP. No account, no watermark, and files are deleted when the transfer ends. Platform guides: [LinkedIn carousel, video and image downloader](https://social-downloader-75g8.onrender.com/linkedin-downloader), [Pinterest video and image downloader (pin.it)](https://social-downloader-75g8.onrender.com/pinterest-downloader), [Instagram Reel, photo and carousel downloader](https://social-downloader-75g8.onrender.com/instagram-downloader).
 
 A local Flask website for downloading available post attachments. Start it with `start-windows.bat` or `start-mac-linux.sh`. The launcher installs dependencies automatically and opens the browser after the server responds; Python 3.10+ is required. Optional ffmpeg enables merging separate video/audio streams.
 
 ## Use
 
-1. Paste an Instagram reel/post URL, a LinkedIn post URL or a Pinterest pin URL (`pin.it` and `lnkd.in` share links work too).
+1. Paste a YouTube video/Shorts URL, an Instagram reel/post URL, a LinkedIn post URL or a Pinterest pin URL (`youtu.be`, `pin.it` and `lnkd.in` share links work too).
 2. Check the attachment previews.
-3. Download an individual image/video, or choose **Download all · ZIP** for multiple attachments.
+3. For YouTube choose MP4 quality or MP3 bitrate, then download the selected format. For other platforms save an individual attachment or choose **Download all · ZIP**.
 
 LinkedIn document carousels are offered as numbered slide images. A PDF option appears only when the source explicitly permits document download. LinkedIn may require sign-in for the original PDF even when its slides are publicly visible. The app does not bypass that restriction. If only cover slides are exposed, it shows a warning.
 
@@ -131,3 +131,14 @@ The app is structured for extension. Remaining work before a public launch:
 - Add monitoring, privacy/retention rules, and abuse controls. Keep end-user login and personal cookies out of the shared service.
 
 See [RESEARCH.md](RESEARCH.md) for the source comparison and implementation decisions.
+
+
+## YouTube video and audio
+
+YouTube is available on the main tool and `/youtube-downloader`. It normalizes watch, youtu.be, Shorts, embed and video live-link paths to one video ID. Actual live streams, channel/playlist pages, restricted videos and DRM are unsupported. Format selectors come only from the server-side session, not from client input.
+
+The UI lists MP4 qualities actually exposed by each video (including 144p through 2160p/4K when available and within the file budget), plus MP3 conversion at 128/192/256/320 kbps. Portrait quality uses the short edge. Estimated source/output sizes are checked; actual source streams and final output are capped at 250 MB. No resolution is upscaled. High-resolution MP4 may contain AV1/VP9 rather than H.264; compatible playback is required. Higher MP3 bitrates do not improve a low-quality source.
+
+Production Docker includes ffmpeg, Node 22 and `yt-dlp[default]`/EJS. Local use needs ffmpeg on PATH and Node 22+ or Deno 2.3+ for full functionality. Without ffmpeg only exposed combined MP4 formats are offered. Personal Instagram/browser cookies are never reused for YouTube.
+
+YouTube can refuse hosting IPs or require sign-in even when its page is visible in a browser. A supported runtime does not guarantee successful extraction; the service does not bypass these restrictions. See `docs/YOUTUBE.md` for validation results and limitations.

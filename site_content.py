@@ -8,11 +8,11 @@ Inline markup allowed in text: [label](url), **bold**, `code`.
 import os
 
 BRAND = os.environ.get('SITE_NAME', '').strip() or 'PostSav'
-TAGLINE = 'Free Instagram, LinkedIn & Pinterest post downloader'
-UPDATED = '2026-10-14'
-LEGAL_UPDATED = '2026-10-14'
+TAGLINE = 'Save public videos, images and posts'
+UPDATED = '2026-10-20'
+LEGAL_UPDATED = '2026-10-20'
 TESTED_ON = '2 October 2026'
-GITHUB_URL = os.environ.get('GITHUB_URL', 'https://github.com/progcode05-sketch/postsav').strip()
+GITHUB_URL = os.environ.get('GITHUB_URL', 'https://github.com/progcode03-dev/postsav').strip()
 # Mirrors app.py (a test keeps the two in sync).
 LIMITS = dict(file_mb=250, zip_mb=500, attachments=100, session_minutes=15, lookups_per_min=10, downloads_per_min=30)
 
@@ -36,6 +36,7 @@ def source(key, note):
 
 
 NAV = [
+    ('YouTube', '/youtube-downloader'),
     ('LinkedIn', '/linkedin-downloader'),
     ('Pinterest', '/pinterest-downloader'),
     ('Instagram', '/instagram-downloader'),
@@ -44,12 +45,13 @@ NAV = [
 ]
 
 FOOTER_GROUPS = [
-    ('Downloaders', [('LinkedIn downloader', '/linkedin-downloader'), ('Pinterest downloader', '/pinterest-downloader'), ('Instagram downloader', '/instagram-downloader')]),
+    ('Downloaders', [('YouTube downloader', '/youtube-downloader'), ('LinkedIn downloader', '/linkedin-downloader'), ('Pinterest downloader', '/pinterest-downloader'), ('Instagram downloader', '/instagram-downloader')]),
     (B, [('About and how it works', '/about'), ('Contact', '/contact')]),
     ('Legal', [('Terms of use', '/terms'), ('Privacy policy', '/privacy'), ('Copyright and takedown', '/copyright')]),
 ]
 
 PLATFORM_CARDS = [
+    ('yt', 'YT', 'YouTube downloader', '/youtube-downloader', 'MP4 video quality choices and MP3 audio from individual public videos and Shorts.'),
     ('li', 'in', 'LinkedIn downloader', '/linkedin-downloader', 'Carousel slides, document posts, videos and images, including lnkd.in share links.'),
     ('pin', 'P', 'Pinterest downloader', '/pinterest-downloader', 'Original-size images and MP4 video pins, including pin.it share links.'),
     ('ig', 'IG', 'Instagram downloader', '/instagram-downloader', 'Reels, photos and carousel posts from a public link.'),
@@ -67,7 +69,7 @@ FEATURES = [
 ]
 
 TRUST = [
-    ('Three platforms', 'Instagram, LinkedIn, Pinterest'),
+    ('Four platforms', 'YouTube and social posts'),
     ('No sign-up', 'No account or login needed'),
     ('Not stored', 'Files deleted when done'),
     ('Free beta', 'No subscription'),
@@ -75,7 +77,7 @@ TRUST = [
 
 SHARE_STEPS = (
     'On Instagram, tap Send and choose Copy link (on desktop, use Options next to the post). On LinkedIn, open the More menu and choose '
-    'Copy link to post. On Pinterest, open the pin, choose Share, then Copy link, which usually gives a pin.it link.'
+    'Copy link to post. On Pinterest, open the pin, choose Share, then Copy link, which usually gives a pin.it link. On YouTube, open a video or Short and choose Share, then Copy link.'
 )
 
 PAGES = {}
@@ -83,14 +85,14 @@ PAGES = {}
 # ----------------------------------------------------------------------------------------------------------------
 PAGES['/'] = dict(
     path='/', template='index.html', kind='home', updated=UPDATED, tool=True,
-    title=f'Free Instagram, LinkedIn & Pinterest Downloader | {B}',
-    description='Download images, videos and carousel slides from public Instagram, LinkedIn and Pinterest posts. Paste a link, get the files or a ZIP. No sign-up.',
-    eyebrow='Instagram + LinkedIn + Pinterest · free beta',
-    h1_soft='Free Instagram, LinkedIn & Pinterest', h1_hi='post downloader',
-    lead=(f'{B} is a free web tool that saves the images, videos and carousel slides from public Instagram, LinkedIn and Pinterest posts. '
+    title=f'Free Video & Image Downloader | {B}',
+    description='Save public YouTube videos as MP4 or MP3, plus Instagram, LinkedIn and Pinterest posts. Choose video quality or save images and ZIPs. No sign-up.',
+    eyebrow='YouTube + social posts · free beta',
+    h1_soft='Free video & image', h1_hi='downloader',
+    lead=(f'{B} saves public YouTube videos as MP4 or MP3, and images, videos and carousel slides from Instagram, LinkedIn and Pinterest. '
           'Paste a post link, preview what is available, then download each file or everything as one ZIP. No account, no app, nothing stored.'),
-    tool_placeholder='Paste an Instagram, LinkedIn or Pinterest link',
-    tool_label='Instagram, LinkedIn or Pinterest post URL',
+    tool_placeholder='Paste a YouTube, Instagram, LinkedIn or Pinterest link',
+    tool_label='YouTube video, Instagram, LinkedIn or Pinterest post URL',
     breadcrumb=[],
     sections=[
         dict(type='steps', id='how', kicker='How it works', heading='How to download an Instagram, LinkedIn or Pinterest post',
@@ -98,13 +100,14 @@ PAGES['/'] = dict(
              items=[
                  ('Copy the post link', SHARE_STEPS),
                  ('Paste it and confirm permission', f'Paste the link into the box at the top of this page and tick the box to confirm you own the content or have permission to download it. {B} reads the public post only and never asks for your login.'),
-                 ('Preview and download', 'Check the previews, then download single files or choose Download all · ZIP. Slides and files are numbered in post order, so they sort correctly.'),
+                 ('Preview and download', 'Check the previews. For YouTube, select MP4 quality or MP3 bitrate; for other posts, save single files or choose Download all · ZIP. Slides and files are numbered in post order, so they sort correctly.'),
              ]),
         dict(type='features', id='features', kicker='What you can save', heading='Built for the posts you actually share', items=FEATURES, trust=TRUST),
         dict(type='table', id='supported', kicker='Support at a glance', heading=f'What can {B} download from each platform?',
              intro='This is exactly what the tool supports today. Each platform name links to a page with details and a step-by-step guide.',
              columns=['Platform', 'Images', 'Videos', 'Carousels and slides', 'Link types', 'Not supported'],
              rows=[
+                 ['[YouTube](/youtube-downloader)', 'Not supported', 'MP4 video or MP3 audio; available quality choices', 'One video at a time; no playlist ZIP', 'youtube.com/watch, /shorts/, youtu.be', 'Live streams, playlists, private or restricted videos'],
                  ['[Instagram](/instagram-downloader)', 'Photos', 'Reels and videos (MP4)', 'Photo and video carousels', 'instagram.com/p/, /reel/, /tv/', 'Stories, private accounts, sign-in-only posts'],
                  ['[LinkedIn](/linkedin-downloader)', 'Single and multi-image posts', 'Videos (MP4)', 'Document slides as ordered images; PDF only when LinkedIn allows it', 'linkedin.com posts, lnkd.in/p/', 'Text-only posts, articles, LinkedIn Learning, restricted posts'],
                  ['[Pinterest](/pinterest-downloader)', 'Original-size images', 'Video pins (MP4, with sound when the pin has it)', 'Multi-image pins when Pinterest exposes them', 'pinterest.com/pin/, pin.it', 'Boards, profiles, search pages, pins hidden from signed-out visitors'],
@@ -112,7 +115,7 @@ PAGES['/'] = dict(
         dict(type='cards', id='platforms', kicker='Guides by platform', heading='Pick your platform', items=PLATFORM_CARDS),
         dict(type='facts', id='at-a-glance', kicker='Key facts', heading=f'{B} at a glance', items=[
             ('Cost', 'Free during the beta. No account, subscription or browser extension.'),
-            ('Works with', 'Public posts on Instagram, LinkedIn and Pinterest, including lnkd.in and pin.it share links.'),
+            ('Works with', 'Individual public YouTube videos and Shorts, plus public posts on Instagram, LinkedIn and Pinterest, including youtu.be, lnkd.in and pin.it links.'),
             ('What you get', 'The image and video files the platform serves, one by one or as an ordered ZIP. No watermark is added.'),
             ('Limits', f"Up to {LIMITS['file_mb']} MB per file, {LIMITS['zip_mb']} MB per ZIP and {LIMITS['attachments']} attachments per post."),
             ('Privacy', f"No accounts. Files are deleted when the transfer ends; post details are kept for at most {LIMITS['session_minutes']} minutes. See the [privacy policy](/privacy) for optional analytics and advertising."),
@@ -126,7 +129,7 @@ PAGES['/'] = dict(
             (f'Does {B} work with lnkd.in and pin.it short links?', 'Yes. Short links from LinkedIn (lnkd.in) and Pinterest (pin.it) are followed to the original post one redirect at a time, and tracking details such as the sender ID in Pinterest links are discarded.'),
             (f'Why can\'t {B} download some posts?', f'{B} only reads public posts and never uses a login. Private accounts, sign-in-only posts, text-only posts, stories and boards cannot be fetched, and a platform may occasionally limit requests. Try again later, or open the post and copy its link again.'),
             (f'Does {B} store my files or links?', f"Downloads are written to temporary storage, streamed to your browser and deleted when the transfer finishes. Post details are kept for at most {LIMITS['session_minutes']} minutes so your download links work. There are no accounts. Read the [privacy policy](/privacy) for analytics and advertising settings."),
-            ('What quality are the downloads?', 'You get the files the platform serves, without re-encoding or watermarks: original-size images on Pinterest, MP4 videos from all three platforms and every slide of a LinkedIn carousel. Quality cannot exceed what the platform makes public.'),
+            ('What quality are the downloads?', 'You get the files the platform serves, without an added watermark: original-size images on Pinterest, MP4 videos and LinkedIn carousel slides. YouTube MP3 audio is converted to the selected bitrate; MP4 quality depends on the exposed streams. Quality cannot exceed what the platform makes public.'),
             ('Is it legal to download content from social media?', 'It depends on who owns the content and how you use it. Save posts you created or have permission to use; other people\'s posts are protected by copyright and by each platform\'s terms. This is general information, not legal advice. See the [terms](/terms) and [copyright and takedown](/copyright) pages.'),
         ]),
         dict(type='sources', id='sources', kicker='Sources', heading='Official guides and terms', items=[
@@ -318,21 +321,21 @@ PAGES['/about'] = dict(
     description=f'How {B} works, what it will and will not download, how files and links are handled, and what changed recently. An independent, free tool.',
     eyebrow=f'About {B}',
     h1_soft='How the free', h1_hi=f'{B} downloader works',
-    lead=(f'{B} is an independent, free tool that saves images, videos and carousel slides from public Instagram, LinkedIn and Pinterest posts. This page explains how it works, '
+    lead=(f'{B} is an independent, free tool for public YouTube videos and images, videos and slides from Instagram, LinkedIn and Pinterest posts. This page explains how it works, '
           'what it deliberately does not do, and what has changed recently.'),
     breadcrumb=[('Home', '/'), ('About', '/about')],
     sections=[
         dict(type='steps', id='how', kicker='How it works', heading=f'How {B} works, step by step',
              intro='Each step is built to keep the tool narrow: it reads public pages, accepts media only from the platforms\' own servers, and keeps nothing afterwards.',
              items=[
-                 ('You paste a link', 'Only Instagram, LinkedIn and Pinterest post URLs are accepted. Share links (lnkd.in and pin.it) are followed one redirect at a time, and every hop is checked before the next request.'),
+                 ('You paste a link', 'Only YouTube video URLs and Instagram, LinkedIn and Pinterest post URLs are accepted. Share links (lnkd.in and pin.it) are followed one redirect at a time, and every hop is checked before the next request.'),
                  ('The server reads the public post', f'{B} requests the same public page a signed-out visitor would see and looks for the addresses of that post\'s own images, videos or slides. It never uses a login, a cookie or a paid API.'),
                  ('You preview and choose', 'Only media from the platforms\' own image and video servers (for example licdn.com, pinimg.com and cdninstagram.com) is accepted. You pick single files or a ZIP.'),
                  ('Files stream through, then disappear', 'Each download is written to temporary storage, streamed to your browser in small chunks and deleted when the transfer finishes. Abandoned files are swept automatically every few minutes.'),
              ]),
         dict(type='prose', id='principles', heading='What it will not do', paragraphs=[
             f'{B} does not download private or sign-in-only content, does not bypass document download restrictions such as LinkedIn\'s PDF gate, and does not add watermarks to downloaded files. '
-            'It is not affiliated with, or endorsed by, Instagram, Meta, LinkedIn or Pinterest.',
+            'It is not affiliated with, or endorsed by, YouTube, Instagram, Meta, LinkedIn or Pinterest.',
             'Downloaded files belong to their creators. The tool is meant for saving content you own or have permission to use. See the [terms](/terms) and the [copyright and takedown](/copyright) page.',
         ]),
         dict(type='facts', id='limits', kicker='Limits', heading='Limits and fair use', items=[
@@ -344,6 +347,7 @@ PAGES['/about'] = dict(
         dict(type='table', id='changes', kicker='Recently', heading='Recent changes',
              columns=['Date', 'Change'],
              rows=[
+                 ['20 October 2026', 'Added YouTube video quality selection, MP4 merging and MP3 conversion.'],
                  ['14 October 2026', 'Rebuilt the interface, added an original visual identity and strengthened browser security.'],
                  ['8 October 2026', 'Added clearer LinkedIn sign-in restriction messages and regression coverage for ugcPost share links.'],
                  ['3 October 2026', 'Added dedicated LinkedIn, Pinterest and Instagram pages, FAQs, structured data, a sitemap, robots.txt and llms.txt.'],
@@ -354,6 +358,42 @@ PAGES['/about'] = dict(
             'Use the [contact page](/contact) for takedown requests, privacy questions, abuse reports and bug reports. When reporting a problem, include the post link and never send passwords or login cookies.',
         ]),
         dict(type='cards', id='more', kicker='Downloaders', heading='Try it on your platform', items=PLATFORM_CARDS),
+    ],
+)
+
+PAGES['/youtube-downloader'] = dict(
+    path='/youtube-downloader', template='platform.html', kind='platform', updated=UPDATED, tool=True,
+    title=f'YouTube MP4 & MP3 Downloader: Choose Quality | {B}',
+    description='Save a public YouTube video as MP4 or MP3. Choose available video resolutions or audio bitrate. Supports video links and Shorts, with a 250 MB limit.',
+    eyebrow='YouTube video & audio', h1_soft='YouTube downloader', h1_hi='MP4 video. MP3 audio.',
+    lead=f'{B} lists the formats a public YouTube video exposes, then lets you choose an MP4 resolution or an MP3 audio bitrate. Paste a video or Shorts link, confirm you have permission, and choose the file you want.',
+    tool_label='YouTube video or Shorts URL', tool_placeholder='Paste a youtube.com or youtu.be video link',
+    breadcrumb=[('Home', '/'), ('YouTube downloader', '/youtube-downloader')],
+    sections=[
+        dict(type='steps', id='how', kicker='How it works', heading='How to save a YouTube video or its audio',
+             howto_name='How to download a public YouTube video or MP3', items=[
+                 ('Copy a single video link', 'Use Share, then Copy link in YouTube. A youtube.com/watch link, youtu.be share link or Shorts link works. Playlist and channel pages are not supported; a video link with a playlist parameter still selects only that video.'),
+                 ('Preview the available formats', 'Paste the link and confirm you own the content or have permission to download it. Choose Fetch media. The result shows one format selector rather than a separate card for every possible resolution.'),
+                 ('Choose MP4 or MP3', 'For video, choose an available MP4 resolution. For audio, select an MP3 bitrate. Press Download selected format and wait for preparation to finish. Higher quality and larger files can take longer on the shared beta server.'),
+             ]),
+        dict(type='facts', id='formats', kicker='Formats', heading='What the quality choices mean', items=[
+            ('MP4 resolutions', 'Possible choices include 144p, 240p, 360p, 480p, 720p, 1080p, 1440p and 2160p (4K), plus other resolutions actually exposed by the video. Missing resolutions are not invented or upscaled.'),
+            ('Portrait videos', 'For a portrait video, the short edge identifies its quality: 1080 × 1920 appears as 1080p. The original orientation is preserved rather than cropped to landscape.'),
+            ('MP3 audio', '128, 192, 256 and 320 kbps conversion choices are offered when an audio track and ffmpeg are available. Choosing a higher bitrate does not restore detail absent from the original audio.'),
+            ('Size limit', 'The same 250 MB limit applies to each YouTube output and its source streams. Options known to exceed the limit are omitted. Estimates are approximate; a download can still stop if its actual size exceeds the limit.'),
+            ('Playback', 'MP4 is a container, not a promise of an H.264 codec. Some high-resolution outputs use AV1 or VP9 and require a compatible browser or player. Audio and video are merged without upscaling the picture.'),
+            ('Access', 'Only an individually accessible, finished public video is supported. Private, members-only, restricted, DRM-protected, live and upcoming videos are unavailable. This service never asks for a YouTube password or browser cookies.'),
+        ]),
+        dict(type='faq', id='faq', kicker='Questions', heading='YouTube downloads: common questions', items=[
+            ('Why is 1080p or 4K missing?', 'YouTube may not expose every resolution for a video, the upload may still be processing, or the available streams may exceed the 250 MB limit. Server access restrictions can also prevent extraction. The selector lists the formats exposed to this server, not an unconditional list of quality presets.'),
+            ('Will the MP4 have sound?', 'When YouTube exposes separate video and audio tracks, the server uses ffmpeg to merge them. A combined MP4 can be used directly. A video-only stream is not presented as a normal video download when no usable audio track is available.'),
+            ('Can I download just the audio?', 'Yes. Select an MP3 option after fetching the video. The server downloads an audio track and converts it to the selected bitrate. There is no need to download the video track first, and an audio-only result has the .mp3 extension.'),
+            ('Do youtu.be links and YouTube Shorts work?', 'Both are normalized to a single video ID. Tracking, playlist and timestamp parameters are removed. Shorts keep their original orientation and are handled with the same format and file-size checks as regular videos.'),
+            ('Why does YouTube ask to confirm I am not a bot?', 'YouTube can limit access from hosting providers and shared server addresses. JavaScript extraction support does not guarantee access. This service does not bypass sign-in, account restrictions or DRM. Try again later or use an official download option available for your video.'),
+            ('Can I download a whole playlist or every format as a ZIP?', 'No. YouTube requests handle one video and one selected output at a time. The ZIP feature remains available for supported multi-attachment social posts, but is not used to download every resolution of a YouTube video.'),
+            ('Which videos may I save?', 'Use the tool only for your own content or content you have permission to download, and respect YouTube’s terms and the creator’s rights. The service does not grant redistribution rights. See our [terms](/terms) and [copyright policy](/copyright).'),
+        ]),
+        dict(type='cards', id='more', kicker='Other platforms', heading='Images, slides and social posts', items=[c for c in PLATFORM_CARDS if c[3] != '/youtube-downloader']),
     ],
 )
 
@@ -373,6 +413,7 @@ for _page in LEGAL.values():
 SITEMAP_PRIORITY = {'/': '1.0', '/linkedin-downloader': '0.9', '/pinterest-downloader': '0.9', '/instagram-downloader': '0.8', '/about': '0.5'}
 
 FEATURE_LIST = [
+    'YouTube MP4 resolution selection and MP3 audio conversion for single public videos and Shorts',
     'Download images from public Instagram, LinkedIn and Pinterest posts',
     'Download videos and Reels as MP4 files',
     'Save LinkedIn carousel (document) slides as images or an ordered ZIP',

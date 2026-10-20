@@ -18,7 +18,7 @@
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta property="og:image:type" content="image/jpeg">
-<meta property="og:image:alt" content="{{ site.name }}: free Instagram, LinkedIn and Pinterest post downloader">
+<meta property="og:image:alt" content="{{ site.name }}: YouTube MP4/MP3 and social post downloader">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="{{ page.title }}">
 <meta name="twitter:description" content="{{ page.description }}">
@@ -53,7 +53,7 @@
   <div><p><strong style="color:var(--ink)">{{ site.name }}</strong></p><p>{{ site.tagline }}.</p>{% if is_public %}<p>Download only content you own or have permission to use. Files are deleted after transfer; post details expire after 15 minutes.</p>{% else %}<p>Runs locally on your computer. Download only content you own or have permission to use.</p>{% endif %}</div>
   {% for group, links in site.footer_groups %}<div><h3>{{ group }}</h3><ul>{% for label, path in links %}<li><a href="{{ path }}">{{ label }}</a></li>{% endfor %}</ul></div>{% endfor %}
  </div>
- <div class="fine"><span>Not affiliated with Instagram, Meta, LinkedIn or Pinterest.</span><span><a href="{{ site.github }}" rel="noopener">Source code</a> · Last updated {{ site.updated }}</span></div>
+ <div class="fine"><span>Not affiliated with YouTube, Instagram, Meta, LinkedIn or Pinterest.</span><span><a href="{{ site.github }}" rel="noopener">Source code</a> · Last updated {{ site.updated }}</span></div>
 </div></footer>
 {% if is_public and not noindex and google.measurement_id %}
 <div id="analytics-consent" class="consent-panel" role="region" aria-label="Analytics preferences" hidden>

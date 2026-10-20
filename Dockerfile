@@ -1,4 +1,8 @@
+FROM node:22-bookworm-slim AS js-runtime
 FROM python:3.12.14-slim-bookworm
+
+# YouTube's JavaScript challenges need a supported runtime in addition to ejs.
+COPY --from=js-runtime /usr/local/bin/node /usr/local/bin/node
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
@@ -19,7 +23,7 @@ RUN apt-get update \
 COPY requirements.txt ./
 RUN python -m pip install --no-cache-dir -r requirements.txt
 
-COPY app.py limits.py media_sources.py seo.py site_content.py wsgi.py gunicorn.conf.py ./
+COPY app.py limits.py media_sources.py youtube_sources.py seo.py site_content.py wsgi.py gunicorn.conf.py ./
 COPY templates ./templates
 COPY static ./static
 

@@ -32,7 +32,7 @@ def allowed_url(url, platform, page=False):
     if page:
         domains = ('linkedin.com',)
     else:
-        domains = {'linkedin': ('licdn.com',), 'pinterest': ('pinimg.com',)}.get(platform, ('cdninstagram.com', 'fbcdn.net'))
+        domains = {'linkedin': ('licdn.com',), 'pinterest': ('pinimg.com',), 'youtube': ('ytimg.com', 'ggpht.com')}.get(platform, ('cdninstagram.com', 'fbcdn.net'))
     return any(host == d or host.endswith('.' + d) for d in domains)
 
 

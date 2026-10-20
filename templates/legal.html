@@ -10,25 +10,25 @@
 <div class="paper">
 {% if slug == 'terms' %}
 <h2>What the service does</h2>
-<p>You paste the link of a public Instagram, LinkedIn or Pinterest post or pin. The service fetches the images, videos or document slides that the platform makes publicly available and lets you save them to your device individually or as a ZIP file.</p>
+<p>You paste the link of a public YouTube video, Instagram, LinkedIn or Pinterest post or pin. The service fetches the images, videos or document slides that the platform makes publicly available and lets you save them to your device individually or as a ZIP file.</p>
 <h2>Your responsibilities</h2>
-<p>Use the service only for content you own or have permission to download. You are responsible for how you use downloaded material, including respecting copyright, the rights of the people shown, and the terms of Instagram, LinkedIn and Pinterest. Do not use the service to harass anyone, to bypass access restrictions, or to download content in bulk. The service does not provide, and you must not attempt to supply, login credentials or cookies.</p>
+<p>Use the service only for content you own or have permission to download. You are responsible for how you use downloaded material, including respecting copyright, the rights of the people shown, and the terms of YouTube, Instagram, LinkedIn and Pinterest. Do not use the service to harass anyone, to bypass access restrictions, or to download content in bulk. The service does not provide, and you must not attempt to supply, login credentials or cookies.</p>
 <h2>Limits and availability</h2>
 <p>The service is provided as is during a beta, without any guarantee that a given post can be fetched. Platforms change and may block requests. Requests are rate limited, files are limited to 250&nbsp;MB each and ZIP bundles to 500&nbsp;MB, and access may be restricted or removed at any time to protect the service.</p>
 <h2>No affiliation</h2>
-<p>This service is not affiliated with or endorsed by Instagram, Meta, LinkedIn or Pinterest. Those names belong to their owners.</p>
+<p>This service is not affiliated with or endorsed by YouTube, Instagram, Meta, LinkedIn or Pinterest. Those names belong to their owners.</p>
 <h2>Changes</h2>
 <p>These terms may change while the service is in beta. Continuing to use the service means you accept the current version.</p>
 
 {% elif slug == 'privacy' %}
 <h2>What we process</h2>
-<p>The post or pin link you submit is sent to our server, which contacts Instagram, LinkedIn or Pinterest to find the media. Share links (lnkd.in, pin.it) are opened on our server to find the post they point to, and any sender or tracking details in them are discarded. We keep the details of that post (caption, uploader name and media addresses) only so your download links work, for at most {{ ttl }} minutes, in the server's memory or in a short-lived Redis entry that expires on its own. We do not keep a history of the links you submit.</p>
+<p>The post or pin link you submit is sent to our server, which contacts YouTube, Instagram, LinkedIn or Pinterest to find the media. Share links (lnkd.in, pin.it) are opened on our server to find the post they point to, and any sender or tracking details in them are discarded. We keep the details of that post (caption, uploader name and media addresses) only so your download links work, for at most {{ ttl }} minutes, in the server's memory or in a short-lived Redis entry that expires on its own. We do not keep a history of the links you submit.</p>
 <h2>Files</h2>
 <p>Media you download is written to temporary storage on the server while it is being prepared and streamed to you. It is deleted as soon as the transfer finishes or is interrupted. Leftover files from crashes or abandoned requests are removed automatically, and never kept longer than about {{ stale }} minutes.</p>
 <h2>Logs and technical data</h2>
 <p>Like most web services, our hosting records technical request logs: your IP address, time, the page requested and the response code. Download session tokens and post links are not written to our access logs, and error logs record only the platform name and error type. Your IP address is also held in server memory for a short time to apply rate limits. Log retention is controlled by the hosting provider.</p>
 <h2>Cookies, accounts and tracking</h2>
-<p>There are no accounts. We never ask for, or use, your Instagram, LinkedIn or Pinterest login. Your browser loads preview thumbnails directly from the platforms' image servers, which can see your IP address when it does.</p>
+<p>There are no accounts. We never ask for, or use, your YouTube, Instagram, LinkedIn or Pinterest login. Your browser loads preview thumbnails directly from the platforms' image servers, which can see your IP address when it does.</p>
 {% if is_public and google.measurement_id %}<p>We use Google Analytics only after you choose Allow analytics. It measures site visits and may use cookies and process technical information, including device and browser details. We do not intentionally send submitted post links, captions, uploader names or download session tokens to Analytics. Your analytics choice is stored in this browser for up to six months. You can reject analytics or change your choice using Analytics preferences at the bottom of the page. Withdrawal stops future collection; it does not erase information previously processed by Google.</p>{% else %}<p>Google Analytics is currently disabled.</p>{% endif %}
 {% if is_public and google.ads_enabled %}<p>This site uses Google AdSense to display advertisements. Google and its partners may use cookies and process information about your device and visits to provide and measure ads. Advertising consent and privacy choices are managed separately through the advertising privacy message. See <a href="https://policies.google.com/technologies/partner-sites" rel="noopener">how Google uses information from partner sites</a> and <a href="https://myadcenter.google.com/" rel="noopener">Google ad preferences</a>.</p>{% else %}<p>Google AdSense advertisements are currently disabled.</p>{% endif %}
 <h2>Sharing</h2>

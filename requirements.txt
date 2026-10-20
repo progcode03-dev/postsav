@@ -1,5 +1,5 @@
 flask>=3.0
-yt-dlp>=2026.1.1
+yt-dlp[default]>=2026.8.19
 requests>=2.32
 beautifulsoup4>=4.12
 instaloader>=4.14

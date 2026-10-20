@@ -2,6 +2,7 @@
 import ipaddress
 import base64
 import hashlib
+import importlib.util
 import json
 import os
 import re
@@ -23,6 +24,7 @@ import requests
 import yt_dlp
 from media_sources import PINTEREST_HOST, allowed_url, download_to_path, linkedin_post, instagram_post, pinterest_pin_url, pinterest_post
 from limits import DownloadGate, RateLimiter
+from youtube_sources import youtube_url, youtube_post, download_youtube
 import seo
 import site_content
 
@@ -111,6 +113,8 @@ def clean_url(raw):
         if p.scheme not in ('http', 'https') or p.username or p.password or p.port not in (None, 80, 443):
             return None
         path = unquote(p.path)
+        if p.hostname in ('youtube.com', 'www.youtube.com', 'm.youtube.com', 'music.youtube.com', 'youtu.be', 'www.youtu.be'):
+            return youtube_url(raw)
         if p.hostname in ('lnkd.in', 'www.lnkd.in'):
             if re.fullmatch(r'/p/[A-Za-z0-9_-]{4,64}/?', path):
                 return resolve_linkedin_short_url(f'https://lnkd.in{path.rstrip("/")}')
@@ -197,7 +201,7 @@ def safe_name(text):
 def post_name(post):
     path = urlsplit(post['url']).path.rstrip('/')
     match = re.search(r'(?:activity|ugcPost|share)[:-](\d+)', path)
-    identifier = match[1] if match else path.split('/')[-1]
+    identifier = post['id'] if post['platform'] == 'youtube' else match[1] if match else path.split('/')[-1]
     return f'{post["platform"]}_{safe_name(post["uploader"])}_{safe_name(identifier)}'
 
 
@@ -329,6 +333,9 @@ def new_download_dir():
 def asset_file(post, asset, index, workdir):
     """Stream one server-extracted attachment into a bounded temporary directory."""
     kind = asset['kind']
+    if asset.get('youtube'):
+        path, quality, mime = download_youtube(post, asset, workdir, ydl_opts(), MAX_FILE, HAS_FFMPEG)
+        return path, f'{post_name(post)}_{quality}{os.path.splitext(path)[1]}', mime
     if asset.get('entry') or asset.get('ytdlp'):
         extra = dict(outtmpl=os.path.join(workdir, '%(id)s.%(ext)s'))
         if asset.get('entry'):
@@ -447,7 +454,10 @@ def readyz():
             checks['redis'] = False
     ready = all(checks.values())
     body = dict(status='ready' if ready else 'degraded', checks=checks, active_downloads=download_gate.active,
-                ffmpeg=HAS_FFMPEG, public_mode=PUBLIC_MODE, legal_contact_configured=bool(CONTACT_EMAIL))
+                ffmpeg=HAS_FFMPEG, public_mode=PUBLIC_MODE, legal_contact_configured=bool(CONTACT_EMAIL),
+                youtube_processing=dict(ffmpeg=HAS_FFMPEG,
+                                        javascript_runtime='node' if shutil.which('node') else 'deno' if shutil.which('deno') else None,
+                                        ejs=importlib.util.find_spec('yt_dlp_ejs') is not None))
     return jsonify(body), 200 if ready else 503
 
 
@@ -458,10 +468,12 @@ def info():
         return jsonify(error='Please confirm that you own this content or have permission to download it.'), 400
     url = clean_url(payload.get('url') if isinstance(payload, dict) else None)
     if not url:
-        return jsonify(error='Paste an Instagram reel/post, LinkedIn post or Pinterest pin URL.'), 400
+        return jsonify(error='Paste an Instagram reel/post, LinkedIn post, Pinterest pin or YouTube video URL.'), 400
     try:
         host = urlsplit(url).hostname
-        if 'linkedin.com' in host:
+        if host == 'www.youtube.com':
+            post = youtube_post(url, ydl_opts(), MAX_FILE, HAS_FFMPEG)
+        elif 'linkedin.com' in host:
             post = linkedin_post(url)
         elif host == 'www.pinterest.com':
             post = pinterest_post(url)
@@ -476,7 +488,8 @@ def info():
         public['session'] = token
         public['assets'] = [dict(id=str(i), kind=a['kind'],
                                 thumbnail=a.get('thumbnail') if allowed_url(a.get('thumbnail'), post['platform']) else None,
-                                label=a.get('label') or a['kind'].title()) for i, a in enumerate(post['assets'])]
+                                label=a.get('label') or a['kind'].title(),
+                                **({'choices': a['choices']} if a.get('youtube') else {})) for i, a in enumerate(post['assets'])]
         return jsonify(public)
     except Exception as err:
         app.logger.warning('Extraction failed for %s: %s', urlsplit(url).hostname, type(err).__name__)
@@ -496,6 +509,9 @@ def download():
     if not post:
         return jsonify(error='This download session expired. Fetch the post again.'), 410
     chosen = request.args.get('asset', '0')
+    selection = request.args.get('format', '')
+    if post['platform'] == 'youtube' and (chosen != '0' or selection not in post['assets'][0]['youtube_options']):
+        return jsonify(error='Choose one of the available YouTube formats. ZIP bundles are not supported for YouTube.'), 400
     if chosen != 'all' and (not re.fullmatch(r'[0-9]{1,3}', chosen) or int(chosen) >= len(post['assets'])):
         return jsonify(error='Invalid attachment.'), 400
     release = download_gate.acquire(client_ip(), MAX_CONCURRENT_DOWNLOADS, MAX_DOWNLOADS_PER_CLIENT)
@@ -522,7 +538,8 @@ def download():
                     os.remove(path)
             return stream_download(archive_path, workdir, f'{post_name(post)}.zip', 'application/zip', release)
         i = int(chosen)
-        path, name, mime = asset_file(post, post['assets'][i], i, workdir)
+        selected_asset = dict(post['assets'][i], selection=selection) if post['platform'] == 'youtube' else post['assets'][i]
+        path, name, mime = asset_file(post, selected_asset, i, workdir)
         return stream_download(path, workdir, name, mime, release)
     except Exception as err:
         release()

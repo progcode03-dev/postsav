@@ -22,9 +22,9 @@ def build():
  card=Image.new('RGB',(1200,630),PAPER); d=ImageDraw.Draw(card); logo=im.resize((76,76),Image.Resampling.LANCZOS);card.paste(logo,(64,50),logo)
  d.text((156,61),'PostSav',font=font(40),fill=INK);d.line((64,156,1136,156),fill='#c6cfbf',width=2)
  d.text((64,198),'A post. A proper file.',font=font(66,True),fill=INK)
- d.text((66,310),'Save public images, videos & carousel slides.',font=font(28),fill=GREEN)
- d.text((66,362),'Instagram  /  LinkedIn  /  Pinterest',font=font(25),fill=INK)
- for i,label in enumerate(['MP4','JPG','ZIP']):
+ d.text((66,310),'Save public videos, audio & post images.',font=font(28),fill=GREEN)
+ d.text((66,362),'YouTube  /  Instagram  /  LinkedIn  /  Pinterest',font=font(25),fill=INK)
+ for i,label in enumerate(['MP4','MP3','JPG','ZIP']):
   x=66+i*185;d.rectangle((x,460,x+160,536),fill=PALE,outline='#c6cfbf',width=2);d.text((x+44,480),label,font=font(26),fill=GREEN)
  d.text((800,500),'Free. No account needed.',font=font(22),fill=INK);card.save(ROOT/'img/og-image.jpg',quality=90,optimize=True)
  for name,size,label,caption in [('images',(720,1080),'JPG','ONE FRAME'),('video',(720,484),'MP4','MOVING PICTURES'),('slides',(720,480),'SLIDES','IN SEQUENCE'),('zip',(720,480),'ZIP','ALL TOGETHER')]:

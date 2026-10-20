@@ -225,14 +225,14 @@ def sitemap_xml(base):
 def llms_txt(base):
     home = sc.PAGES['/']
     lines = [f'# {sc.BRAND}', '', f'> {md_plain(home["lead"])}', '',
-             f'{sc.BRAND} is not affiliated with Instagram, Meta, LinkedIn or Pinterest. It only handles public posts, never asks for a login, and deletes temporary files after transfer.', '',
+             f'{sc.BRAND} is not affiliated with YouTube, Instagram, Meta, LinkedIn or Pinterest. It only handles public posts, never asks for a login, and deletes temporary files after transfer.', '',
              '## Key facts', '',
              f'- Cost: free during the beta, no account.',
-             f'- Platforms: Instagram (Reels, photos, carousels), LinkedIn (images, videos, carousel slides, lnkd.in links), Pinterest (original-size images, MP4 video pins, pin.it links).',
+             f'- Platforms: YouTube (MP4 quality selection and MP3 audio, single videos and Shorts), Instagram (Reels, photos, carousels), LinkedIn (images, videos, carousel slides, lnkd.in links), Pinterest (original-size images, MP4 video pins, pin.it links).',
              f'- Limits: {sc.LIMITS["file_mb"]} MB per file, {sc.LIMITS["zip_mb"]} MB per ZIP, {sc.LIMITS["attachments"]} attachments per post.',
              f'- Privacy: files are deleted when the transfer ends; no accounts. Optional analytics and advertising are described in the privacy policy.',
              f'- Last tested: {sc.TESTED_ON}, 17 of 17 real public post links downloaded and validated.', '', '## Downloaders', '']
-    for path in ('/linkedin-downloader', '/pinterest-downloader', '/instagram-downloader'):
+    for path in ('/youtube-downloader', '/linkedin-downloader', '/pinterest-downloader', '/instagram-downloader'):
         p = sc.PAGES[path]
         lines.append(f'- [{p["eyebrow"]}]({page_url(base, path)}): {p["description"]}')
     lines += ['', '## About and policies', '',
@@ -274,7 +274,7 @@ def _section_markdown(section, base):
 
 def llms_full_txt(base):
     out = [f'# {sc.BRAND}: full site text', '', f'Last updated {display_date(sc.UPDATED)}. Source: {base}/', '']
-    for path in ('/', '/linkedin-downloader', '/pinterest-downloader', '/instagram-downloader', '/about'):
+    for path in ('/', '/youtube-downloader', '/linkedin-downloader', '/pinterest-downloader', '/instagram-downloader', '/about'):
         page = sc.PAGES[path]
         out += ['---', '', f'# {page["title"]}', f'URL: {page_url(base, path)}', '', md_absolute(page['lead'], base), '']
         for section in page['sections']:
@@ -301,7 +301,7 @@ def pricing_md(base):
             f'- Limits: {sc.LIMITS["file_mb"]} MB per file, {sc.LIMITS["zip_mb"]} MB per ZIP, {sc.LIMITS["attachments"]} attachments per post\n'
             f'- Fair use: {sc.LIMITS["lookups_per_min"]} lookups and {sc.LIMITS["downloads_per_min"]} downloads per minute per visitor\n'
             f'- Download links expire after {sc.LIMITS["session_minutes"]} minutes\n'
-            '- Includes: Instagram, LinkedIn and Pinterest downloads, individual files and ZIP bundles, no watermark\n\n'
+            '- Includes: YouTube MP4/MP3, Instagram, LinkedIn and Pinterest downloads, individual files and ZIP bundles, no watermark\n\n'
             f'Last updated {display_date(sc.UPDATED)}. See {base}/about for limits and how the tool works.\n')
 
 

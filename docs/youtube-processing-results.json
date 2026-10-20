@@ -1,0 +1,35 @@
+{
+  "source": "generated localhost fixtures; not live YouTube",
+  "results": [
+    {
+      "choice": "mp4-240",
+      "bytes": 18551,
+      "mime": "video/mp4",
+      "status": "PASS"
+    },
+    {
+      "choice": "mp3-128",
+      "bytes": 17696,
+      "mime": "audio/mpeg",
+      "status": "PASS"
+    },
+    {
+      "choice": "mp3-192",
+      "bytes": 26473,
+      "mime": "audio/mpeg",
+      "status": "PASS"
+    },
+    {
+      "choice": "mp3-256",
+      "bytes": 35250,
+      "mime": "audio/mpeg",
+      "status": "PASS"
+    },
+    {
+      "choice": "mp3-320",
+      "bytes": 44027,
+      "mime": "audio/mpeg",
+      "status": "PASS"
+    }
+  ]
+}

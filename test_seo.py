@@ -486,9 +486,9 @@ class LinkIntegrityTests(Base):
             self.assertIn(path, reachable, f'{path} is an orphan page (not linked from the home page)')
 
     def test_platform_pages_cross_link_to_each_other(self):
-        for path in ('/linkedin-downloader', '/pinterest-downloader', '/instagram-downloader'):
+        for path in ('/youtube-downloader', '/linkedin-downloader', '/pinterest-downloader', '/instagram-downloader'):
             hrefs = {a['href'] for a in soup_of(self.client, path).select('.pcard')}
-            self.assertEqual(len(hrefs), 2, path)
+            self.assertEqual(len(hrefs), 3, path)
             self.assertNotIn(path, hrefs)
 
 
